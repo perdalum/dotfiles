@@ -53,11 +53,9 @@
                   eshell-mode
                   flycheck-error-list-mode
                   git-rebase-mode
-                  octopress-mode
-                  octopress-server-mode
-                  octopress-process-mode
                   sunshine-mode
-                  term-mode))
+                  term-mode
+                  neotree-mode))
     (add-to-list 'evil-emacs-state-modes mode))
 
   (delete 'term-mode evil-insert-state-modes)
@@ -97,12 +95,19 @@
   (evil-define-key 'normal global-map (kbd "s-d")     'eval-defun)
   (evil-define-key 'normal global-map (kbd "C-t")     'air-open-eshell)
   (evil-define-key 'normal global-map (kbd "z d")     'dictionary-lookup-definition)
-  (evil-define-key 'normal global-map (kbd "\\ \\")   'tiny-menu)
-  (evil-define-key 'normal global-map (kbd "\\ a")    (tiny-menu-run-item "org-agendas"))
-  (evil-define-key 'normal global-map (kbd "\\ f")    (tiny-menu-run-item "org-files"))
-  (evil-define-key 'normal global-map (kbd "\\ t")    (tiny-menu-run-item "org-things"))
-  (evil-define-key 'normal global-map (kbd "\\ c")    (tiny-menu-run-item "org-captures"))
-  (evil-define-key 'normal global-map (kbd "\\ l")    (tiny-menu-run-item "org-links"))
+  (evil-define-key 'normal global-map (kbd "§ §")   'tiny-menu)
+  (evil-define-key 'normal global-map (kbd "§ a")    (tiny-menu-run-item "org-agendas"))
+  (evil-define-key 'normal global-map (kbd "§ f")    (tiny-menu-run-item "org-files"))
+  (evil-define-key 'normal global-map (kbd "§ t")    (tiny-menu-run-item "org-things"))
+  (evil-define-key 'normal global-map (kbd "§ c")    (tiny-menu-run-item "org-captures"))
+  (evil-define-key 'normal global-map (kbd "§ l")    (tiny-menu-run-item "org-links"))
+
+  ;; PMD
+  ;;(evil-define-key 'normal global-map (kbd "C-e") 'evil-end-of-line))
+  ;; (define-key evil-normal-state-map (kbd "C-e") 'evil-end-of-line)
+  ;; (define-key evil-normal-state-map (kbd "C-a") 'evil-beginning-of-line)
+  ;; (define-key evil-insert-state-map (kbd "C-a") 'evil-beginning-of-line)
+
 
   (defun minibuffer-keyboard-quit ()
     "Abort recursive edit.
@@ -124,7 +129,8 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
   (define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
 
   ;; My own Ex commands.
-  (evil-ex-define-cmd "om" 'octopress-status))
+  ;; (evil-ex-define-cmd "om" 'octopress-status)
+  )
 
 (defun air--apply-evil-other-package-configs ()
   "Apply evil-dependent settings specific to other packages."
@@ -140,12 +146,6 @@ then it takes a second \\[keyboard-quit] to abort the minibuffer."
     (interactive)
     (search-backward-regexp "\\(>>>>\\|====\\|<<<<\\)" (point-min) t)
     (move-beginning-of-line nil))
-
-  ;; PHP
-  (evil-define-key 'normal php-mode-map (kbd "]n") 'next-conflict-marker)
-  (evil-define-key 'normal php-mode-map (kbd "[n") 'previous-conflict-marker)
-  (evil-define-key 'visual php-mode-map (kbd "]n") 'next-conflict-marker)
-  (evil-define-key 'visual php-mode-map (kbd "[n") 'previous-conflict-marker)
 
   ;; Dired
   (evil-define-key 'normal dired-mode-map (kbd "C-e") 'dired-toggle-read-only))

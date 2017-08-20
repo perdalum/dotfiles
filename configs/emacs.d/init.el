@@ -32,7 +32,10 @@
 (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
 (load custom-file 'noerror)
 
-(require 'init-utils)
+(setq pmd-file (expand-file-name "pmd.el" user-emacs-directory))
+(load pmd-file)
+
+;;(require 'init-utils)
 (require 'init-elpa)
 
 (unless (package-installed-p 'use-package)
@@ -55,6 +58,11 @@
 (setq-default left-fringe-width nil)
 (setq-default indicate-empty-lines t)
 (setq-default indent-tabs-mode nil)
+
+(setq tab-always-indent 'complete)
+(add-to-list 'completion-styles 'initials t)
+;; make fringe color like background
+;(set-face-attribute 'fringe nil :background nil)
 
 ;; Why did I do this? Perhaps to keep vc from meddling with things
 ;; that Magit does, but it's convenient to be able to lean on vc for
@@ -80,27 +88,33 @@
       (delete-trailing-whitespace)))
 (add-to-list 'write-file-functions 'air--delete-trailing-whitespace-in-proc-and-org-files)
 
-;; The OS X visible bell is buggy as hell.
-(defvar air-bell-ringing nil
-  "Whether my visual bell is currently being rung.
-
-This prevents simultaneously ringing two bells and falling into a race
-condition where the bell visualization never clears.")
-
+;; PMD better visual bell
+(setq visible-bell nil)
 (setq ring-bell-function (lambda ()
-                           (if (not air-bell-ringing)
-                               (let* ((bg (face-background 'default))
-                                      (fg (face-foreground 'default))
-                                      (reset `(lambda ()
-                                                (set-face-background 'default ,bg)
-                                                (set-face-foreground 'default ,fg)
-                                                (setq air-bell-ringing nil))))
+                           (invert-face 'mode-line)
+                           (run-with-timer 0.1 nil 'invert-face 'mode-line)))
 
-                                 (set-face-background 'default "NavajoWhite4")
-                                 ;(set-face-foreground 'default "black")
-                                 (setq air-bell-ringing t)
+;; The OS X visible bell is buggy as hell.
+;; (defvar air-bell-ringing nil
+;;   "Whether my visual bell is currently being rung.
 
-                                 (run-with-timer 0.05 nil reset)))))
+;; This prevents simultaneously ringing two bells and falling into a race
+;; condition where the bell visualization never clears.")
+
+;; (setq ring-bell-function (lambda ()
+;;                            (if (not air-bell-ringing)
+;;                                (let* ((bg (face-background 'default))
+;;                                       (fg (face-foreground 'default))
+;;                                       (reset `(lambda ()
+;;                                                 (set-face-background 'default ,bg)
+;;                                                 (set-face-foreground 'default ,fg)
+;;                                                 (setq air-bell-ringing nil))))
+
+;;                                  (set-face-background 'default "NavajoWhite4")
+;;                                  ;(set-face-foreground 'default "black")
+;;                                  (setq air-bell-ringing t)
+
+;;                                  (run-with-timer 0.05 nil reset)))))
 
 (defun my-minibuffer-setup-hook ()
   "Increase GC cons threshold."
@@ -127,7 +141,6 @@ condition where the bell visualization never clears.")
 ;; (add-to-list 'completion-at-point-functions 'pcomplete)
 
 ;;; My own configurations, which are bundled in my dotfiles.
-(require 'init-platform)
 (require 'init-global-functions)
 
 ;;; Required by init-maps, so it appears up here.
@@ -168,18 +181,10 @@ condition where the bell visualization never clears.")
 
 ;;; Larger package-specific configurations.
 (require 'diminish)
-(require 'init-fonts)
-(require 'init-gtags)
 (require 'init-evil)
 (require 'init-twitter)
-(require 'init-maps)
 (require 'init-w3m)
-(require 'init-php)
 (require 'init-flycheck)
-(require 'init-tmux)
-
-(add-to-list 'load-path (expand-file-name "fence-edit" user-emacs-directory))
-(require 'fence-edit)
 
 ;; Utilities
 (use-package s
@@ -188,28 +193,6 @@ condition where the bell visualization never clears.")
 (use-package dash :ensure t)
 
 (use-package visual-fill-column :ensure t)
-
-;; Org Mode
-(add-to-list 'load-path (expand-file-name "periodic-commit-minor-mode" user-emacs-directory))
-(require 'periodic-commit-minor-mode)
-(require 'init-org)
-
-;; Just while I'm working on it.
-;;(add-to-list 'load-path (expand-file-name "octopress" user-emacs-directory))
-(use-package octopress
-  :ensure t
-  :commands (octopress-status octopress-mode)
-  :config
-  (require 'markdown-mode)
-  (add-hook 'markdown-mode-hook
-            (lambda ()
-              (define-key markdown-mode-map (kbd "C-c o l") 'octopress-insert-post-url))))
-
-(use-package all-the-icons
-  :ensure t)
-
-(use-package all-the-icons-dired
-  :ensure t)
 
 (use-package helm-make
   :ensure t
@@ -239,45 +222,12 @@ condition where the bell visualization never clears.")
   (define-key dired-mode-map (kbd "?")       'evil-search-backward)
   (define-key dired-mode-map (kbd "C-c C-c") 'dired-toggle-read-only))
 
-(eval-after-load 'wdired
-  (add-hook 'wdired-mode-hook 'evil-normal-state))
-
 (use-package exec-path-from-shell
   :ensure t
   :config
   (exec-path-from-shell-initialize)
   (exec-path-from-shell-copy-env "GOPATH"))
 
-(use-package elpy
-  :ensure t
-  :config
-  (elpy-enable))
-
-(use-package go-mode
-  :ensure t
-  :config
-  (add-hook 'go-mode-hook (lambda ()
-                            (if (not (string-match "go" compile-command))
-                                (set (make-local-variable 'compile-command)
-                                     "go build -v && go test -v && go vet"))
-                            (setq compilation-read-command nil)
-                            (add-hook 'before-save-hook 'gofmt-before-save nil t)
-                            (define-key go-mode-map (kbd "C-c C-C") 'compile))))
-
-(use-package rjsx-mode
-  :ensure t
-  :config
-  (defun rjsx-mode-config ()
-    "Configure RJSX Mode"
-    (define-key rjsx-mode-map (kbd "C-j") 'rjsx-delete-creates-full-tag))
-
-  (add-hook 'rjsx-mode-hook 'rjsx-mode-config))
-
-(use-package groovy-mode
-  :ensure t
-  :mode "\\.groovy\\'"
-  :config
-  (c-set-offset 'label 4))
 
 (use-package rainbow-mode
   :ensure t
@@ -288,25 +238,6 @@ condition where the bell visualization never clears.")
   :config
   (add-hook 'css-mode-hook (lambda ()
                              (rainbow-mode))))
-
-(use-package wgrep
-  :ensure t
-  :config
-  (setq wgrep-auto-save-buffer t)
-  (defadvice wgrep-change-to-wgrep-mode (after wgrep-set-normal-state)
-    (if (fboundp 'evil-normal-state)
-        (evil-normal-state)))
-  (ad-activate 'wgrep-change-to-wgrep-mode)
-
-  (defadvice wgrep-finish-edit (after wgrep-set-motion-state)
-    (if (fboundp 'evil-motion-state)
-        (evil-motion-state)))
-  (ad-activate 'wgrep-finish-edit))
-
-(use-package wgrep-ag
-  :ensure t
-  :commands (wgrep-ag-setup))
-
 (use-package ag
   :ensure t
   :commands (ag ag-project)
@@ -320,10 +251,6 @@ condition where the bell visualization never clears.")
   (setq ag-highlight-search t)
   (setq ag-reuse-buffers t)
   (setq ag-reuse-window t))
-
-(use-package js2-mode
-  :ensure t
-  :mode "\\.js\\'")
 
 (use-package exec-path-from-shell
   :ensure t
@@ -344,41 +271,6 @@ condition where the bell visualization never clears.")
   (define-key helm-map (kbd "S-SPC") 'helm-toggle-visible-mark)
   (define-key helm-find-files-map (kbd "C-k") 'helm-find-files-up-one-level))
 
-(use-package company
-  :ensure t
-  :defer t
-  :init
-  (global-company-mode)
-  :config
-
-  (defun org-keyword-backend (command &optional arg &rest ignored)
-    "Company backend for org keywords.
-
-COMMAND, ARG, IGNORED are the arguments required by the variable
-`company-backends', which see."
-    (interactive (list 'interactive))
-    (cl-case command
-      (interactive (company-begin-backend 'org-keyword-backend))
-      (prefix (and (eq major-mode 'org-mode)
-                   (let ((p (company-grab-line "^#\\+\\(\\w*\\)" 1)))
-                     (if p (cons p t)))))
-      (candidates (mapcar #'upcase
-                          (cl-remove-if-not
-                           (lambda (c) (string-prefix-p arg c))
-                           (pcomplete-completions))))
-      (ignore-case t)
-      (duplicates t)))
-  (add-to-list 'company-backends 'org-keyword-backend)
-
-  (setq company-idle-delay 0.2)
-  (setq company-selection-wrap-around t)
-  (define-key company-active-map (kbd "ESC") 'company-abort)
-  (define-key company-active-map [tab] 'company-complete-common-or-cycle)
-  (define-key company-active-map (kbd "C-n") 'company-select-next)
-  (define-key company-active-map (kbd "C-p") 'company-select-previous))
-
-(use-package counsel :ensure t)
-
 (use-package swiper
   :ensure t
   :commands swiper
@@ -389,18 +281,6 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
   (setq ivy-height 20))
 
 (use-package dictionary :ensure t)
-
-(use-package emmet-mode
-  :ensure t
-  :commands emmet-mode)
-
-(use-package flycheck
-  :ensure t
-  :commands flycheck-mode)
-
-(use-package helm-projectile
-  :commands (helm-projectile helm-projectile-switch-project)
-  :ensure t)
 
 (use-package markdown-mode
   :ensure t
@@ -421,22 +301,6 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
                                   (set-fill-column 80)
                                   (turn-on-auto-fill)
                                   (flyspell-mode))))
-
-(use-package php-extras :ensure t :defer t)
-(use-package sublime-themes :ensure t)
-(use-package sunshine
-  :ensure t
-  :commands sunshine-forecast
-  :config
-  (defun get-string-from-file (file-path)
-    "Return FILE-PATH's contents."
-    (with-temp-buffer
-      (insert-file-contents file-path)
-      (buffer-string)))
-  (setq sunshine-appid (get-string-from-file
-                        (expand-file-name "sunshine-appid" user-emacs-directory)))
-  (setq sunshine-location "Brookline, MA")
-  (setq sunshine-show-icons t))
 
 (use-package twittering-mode
   :ensure t
@@ -462,14 +326,6 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
   (setq web-mode-markup-indent-offset 2)
   (setq web-mode-sql-indent-offset 2))
 
-(use-package sublime-themes :ensure t)
-(use-package gruvbox-theme :ensure t)
-(use-package color-theme-sanityinc-tomorrow :ensure t)
-(use-package zenburn-theme :ensure t :defer t)
-
-(use-package mmm-mode :ensure t :defer t)
-(use-package yaml-mode :ensure t :defer t)
-
 (use-package yasnippet
   :ensure t
   :defer t
@@ -489,13 +345,6 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
   :config
   (which-key-mode t))
 
-(use-package projectile
-  :ensure t
-  :defer 1
-  :config
-  (projectile-global-mode)
-  (setq projectile-enable-caching t))
-
 (use-package highlight-symbol
   :ensure t
   :defer t
@@ -512,24 +361,6 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
   (setq magit-last-seen-setup-instructions "1.4.0")
   (magit-define-popup-switch 'magit-log-popup ?f "first parent" "--first-parent"))
 
-(use-package mmm-mode
-  :ensure t
-  :defer t
-  :config
-  (setq mmm-global-mode 'maybe)
-  (mmm-add-classes
-   '((markdown-cl
-      :submode emacs-lisp-mode
-      :face mmm-declaration-submode-face
-      :front "^~~~cl[\n\r]+"
-      :back "^~~~$")
-     (markdown-php
-      :submode php-mode
-      :face mmm-declaration-submode-face
-      :front "^```php[\n\r]+"
-      :back "^```$")))
-  (mmm-add-mode-ext-class 'markdown-mode nil 'markdown-cl)
-  (mmm-add-mode-ext-class 'markdown-mode nil 'markdown-php))
 
 (use-package undo-tree
   :ensure t
@@ -539,38 +370,8 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
   (setq undo-tree-history-directory-alist
         (list (cons "." (expand-file-name "undo-tree-history" user-emacs-directory)))))
 
-;;; Helpers for GNUPG, which I use for encrypting/decrypting secrets.
-(require 'epa-file)
-(epa-file-enable)
-(setq-default epa-file-cache-passphrase-for-symmetric-encryption t)
-
 (defvar show-paren-delay 0
   "Delay (in seconds) before matching paren is highlighted.")
-
-;;; Flycheck mode:
-(add-hook 'flycheck-mode-hook
-          (lambda ()
-            (evil-define-key 'normal flycheck-mode-map (kbd "]e") 'flycheck-next-error)
-            (evil-define-key 'normal flycheck-mode-map (kbd "[e") 'flycheck-previous-error)))
-
-;;; Lisp interaction mode & Emacs Lisp mode:
-(add-hook 'lisp-interaction-mode-hook
-          (lambda ()
-            (define-key lisp-interaction-mode-map (kbd "<C-return>") 'eval-last-sexp)))
-
-;;; All programming modes
-(defun air--set-up-prog-mode ()
-  "Configure global prog-mode."
-  (setq-local comment-auto-fill-only-comments t)
-  (electric-pair-local-mode))
-(add-hook 'prog-mode-hook 'air--set-up-prog-mode)
-
-(use-package nlinum-relative
-  :ensure t
-  :config
-  (nlinum-relative-setup-evil)
-  (setq nlinum-relative-redisplay-delay 0)
-  (add-hook 'prog-mode-hook #'nlinum-relative-mode))
 
 ;;; Python mode:
 (use-package virtualenvwrapper
@@ -600,57 +401,6 @@ COMMAND, ARG, IGNORED are the arguments required by the variable
             ;; Additional settings follow.
             (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
-;;; The Emacs Shell
-(defun company-eshell-history (command &optional arg &rest ignored)
-  "Complete from shell history when starting a new line.
-
-Provide COMMAND and ARG in keeping with the Company Mode backend spec.
-The IGNORED argument is... Ignored."
-  (interactive (list 'interactive))
-  (cl-case command
-    (interactive (company-begin-backend 'company-eshell-history))
-    (prefix (and (eq major-mode 'eshell-mode)
-                 (let ((word (company-grab-word)))
-                   (save-excursion
-                     (eshell-bol)
-                     (and (looking-at-p (s-concat word "$")) word)))))
-    (candidates (remove-duplicates
-                 (->> (ring-elements eshell-history-ring)
-                      (remove-if-not (lambda (item) (s-prefix-p arg item)))
-                      (mapcar 's-trim))
-                 :test 'string=))
-    (sorted t)))
-
-(defadvice term-sentinel (around my-advice-term-sentinel (proc msg))
-  "Kill term buffer when term is ended."
-  (if (memq (process-status proc) '(signal exit))
-      (let ((buffer (process-buffer proc)))
-        ad-do-it
-        (kill-buffer buffer))
-    ad-do-it))
-(ad-activate 'term-sentinel)
-
-;; Eshell things
-(defun air--eshell-clear ()
-  "Clear an eshell buffer and re-display the prompt."
-  (interactive)
-  (let ((inhibit-read-only t))
-    (erase-buffer)
-    (eshell-send-input)))
-
-(defun air--eshell-mode-hook ()
-  "Eshell mode settings."
-  (define-key eshell-mode-map (kbd "C-u") 'eshell-kill-input)
-  (define-key eshell-mode-map (kbd "C-l") 'air--eshell-clear)
-  (define-key eshell-mode-map (kbd "C-d") (lambda () (interactive)
-                                            (kill-this-buffer)
-                                            (if (not (one-window-p))
-                                                (delete-window))))
-  (set (make-local-variable 'pcomplete-ignore-case) t)
-  (set (make-local-variable 'company-backends)
-       '((company-shell company-eshell-history))))
-
-(add-hook 'eshell-mode-hook 'air--eshell-mode-hook)
 
 ;;; Magit mode (which does not open in evil-mode):
 (add-hook 'magit-mode-hook
@@ -659,12 +409,6 @@ The IGNORED argument is... Ignored."
 
 ;;; Git Commit Mode (a Magit minor mode):
 (add-hook 'git-commit-mode-hook 'evil-insert-state)
-
-;;; Emmet mode:
-(add-hook 'emmet-mode-hook
-          (lambda ()
-            (evil-define-key 'insert emmet-mode-keymap (kbd "C-S-l") 'emmet-next-edit-point)
-            (evil-define-key 'insert emmet-mode-keymap (kbd "C-S-h") 'emmet-prev-edit-point)))
 
 ;;; Web mode:
 (add-hook 'web-mode-hook
@@ -711,59 +455,16 @@ The IGNORED argument is... Ignored."
 (add-hook 'twittering-edit-mode-hook (lambda ()
                                        (flyspell-mode)))
 
-;;; Javascript mode:
-(add-hook 'javascript-mode-hook (lambda ()
-                                  (set-fill-column 120)
-                                  (turn-on-auto-fill)
-                                  (setq js-indent-level 2)))
-
 ;;; HTML mode:
 (add-hook 'html-mode-hook (lambda ()
                             (setq sgml-basic-offset 2)
                             (setq indent-tabs-mode nil)))
 
-(defun find-php-functions-in-current-buffer ()
-  "Find lines that appear to be PHP functions in the buffer.
-
-This function performs a regexp forward search from the top
-\(point-min) of the buffer to the end, looking for lines that
-appear to be PHP function declarations.
-
-The return value of this function is a list of cons in which
-the car of each cons is the bare function name and the cdr
-is the buffer location at which the function was found."
-  (save-excursion
-    (goto-char (point-min))
-    (let (res)
-      (save-match-data
-        (while (re-search-forward  "^ *\\(public \\|private \\|protected \\|static \\)*?function \\([^{]+\\)" nil t)
-          (let* ((fn-name (save-match-data (match-string-no-properties 2)))
-                 (fn-location (save-match-data (match-beginning 0))))
-            (setq res
-                  (append res
-                          (list `(,fn-name . ,fn-location)))))))
-      res)))
 
 (put 'narrow-to-region 'disabled nil)
 
-;;; sRGB doesn't blend with Powerline's pixmap colors, but is only
-;;; used in OS X. Disable sRGB before setting up Powerline.
-(when (memq window-system '(mac ns))
-  (setq ns-use-srgb-colorspace nil))
-
 (load-theme 'challenger-deep)
 (with-eval-after-load 'challenger-deep-theme
-  (dolist (level (number-sequence 1 8))
-    (let ((face-name (concat "org-level-"
-                             (number-to-string level))))
-      (set-face-attribute (intern face-name) nil
-                          :box nil
-                          :background nil)))
-  (set-face-attribute 'company-tooltip-selection nil
-                      :foreground "black")
-  (set-face-attribute 'company-tooltip-common-selection nil
-                      :foreground "black"
-                      :weight 'bold)
   (set-face-attribute 'helm-selection nil
                       :foreground "black")
   (set-face-attribute 'lazy-highlight nil
@@ -778,5 +479,13 @@ is the buffer location at which the function was found."
 (setq server-socket-dir (expand-file-name "server" user-emacs-directory))
 (server-start)
 
+(use-package nlinum-relative
+  :ensure t
+  :config
+  ;; something fishy is going on at evil-normal-state-p isn't defined
+  ;; when entering the followinf function. Alas, I've disabled it for now
+  (nlinum-relative-setup-evil)
+  (setq nlinum-relative-redisplay-delay 0)
+  (add-hook 'prog-mode-hook #'nlinum-relative-mode))
 (provide 'init)
 ;;; init.el ends here
