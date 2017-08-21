@@ -113,12 +113,23 @@
 ;; (require 'powerline)
 (require-package 'neotree) ; TODO: keyboard shortcut (eller vente på
                                         ; installation af evil med leader-key
+(require-package 'olivetti)
+(require-package 'fountain-mode)
+(require-package 'all-the-icons)
+(require-package 'all-the-icons-dired)
+;; this does not work yet?
+;;(add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+(require-package 'sunrise-commander)
+(require-package 'sunrise-x-buttons)
+(require-package 'sunrise-x-tree)
+(require-package 'magit)
+(require-package 'evil)
+;;(require 'evil)
+;;(evil-mode 1)
 
 ;; Andre muligheder
-;; - all-icons...
 ;; - evil
-;; - sunrise commander
-;; - magit, sgu' da!
+;; - gennemgå biebers evil setup
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -130,7 +141,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (neotree neontree calmer-forest-theme dark-forest-theme powerline challenger-deep-theme challenger-deep linum-relative helm)))
+    (olivetti neotree neontree calmer-forest-theme dark-forest-theme powerline challenger-deep-theme challenger-deep linum-relative helm)))
  '(show-paren-mode t)
  '(tool-bar-mode nil))
 (custom-set-faces
