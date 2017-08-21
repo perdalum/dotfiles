@@ -24,7 +24,7 @@ in your home directory at the same time. Simply run `linkall` and you're done.
 Usage is straightforward.
 
 ```bash
-$ git clone https://github.com/aaronbieber/dotfiles.git ~/dotfiles
+$ git clone https://github.com/perdalum/dotfiles.git ~/dotfiles
 $ ~/dotfiles/linkall
 ```
 

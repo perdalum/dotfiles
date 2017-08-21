@@ -1,9 +1,0 @@
-#!/bin/zsh
-
-wincount="$(tmux list-windows | wc -l | awk '{print $1}')"
-
-if [[ "$wincount" -eq 1 ]]; then
-  tmux detach
-else
-  tmux send-keys "C-d"
-fi
