@@ -8,6 +8,7 @@ configs/xmonad/*
 
 # Emacs things
 \#*#
+*~
 
 # Ignore all of emacs.d, which is mostly compiled/downloaded scripts.
 configs/emacs.d/*
